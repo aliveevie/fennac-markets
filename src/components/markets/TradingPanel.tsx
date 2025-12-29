@@ -1,31 +1,146 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Info, ArrowRight, Wallet } from "lucide-react";
+import { Info, ArrowRight, Wallet, Loader2 } from "lucide-react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useClobClient } from "@/hooks/useClobClient";
+import { placeOrder, getMarketInfo, getMarketTokens } from "@/lib/clob-client";
+import { toast } from "@/hooks/use-toast";
 
 interface TradingPanelProps {
   yesPrice: number;
   noPrice: number;
+  marketId?: string; // Market ID for fetching token info
+  yesTokenID?: string; // Token ID for YES side
+  noTokenID?: string; // Token ID for NO side
+  tickSize?: string; // Market tick size (e.g., "0.001")
+  negRisk?: boolean; // Whether market has negative risk
   onTrade?: (side: "yes" | "no", amount: number, action: "buy" | "sell") => void;
 }
 
-export function TradingPanel({ yesPrice, noPrice, onTrade }: TradingPanelProps) {
+export function TradingPanel({ 
+  yesPrice, 
+  noPrice, 
+  marketId,
+  yesTokenID,
+  noTokenID,
+  tickSize = "0.001",
+  negRisk = false,
+  onTrade 
+}: TradingPanelProps) {
   const { isConnected } = useAccount();
+  const { clobClient, isReady, isInitializing, error, reinitialize } = useClobClient();
   const [selectedSide, setSelectedSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [action, setAction] = useState<"buy" | "sell">("buy");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [actualYesTokenID, setActualYesTokenID] = useState(yesTokenID);
+  const [actualNoTokenID, setActualNoTokenID] = useState(noTokenID);
+  const [isFetchingTokens, setIsFetchingTokens] = useState(false);
+
+  // Fetch token IDs if not provided
+  useEffect(() => {
+    if (marketId && (!yesTokenID || !noTokenID)) {
+      setIsFetchingTokens(true);
+      getMarketTokens(marketId)
+        .then((tokens) => {
+          if (tokens) {
+            setActualYesTokenID(tokens.yesTokenID);
+            setActualNoTokenID(tokens.noTokenID);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch tokens:", err);
+        })
+        .finally(() => {
+          setIsFetchingTokens(false);
+        });
+    }
+  }, [marketId, yesTokenID, noTokenID]);
 
   const price = selectedSide === "yes" ? yesPrice : noPrice;
   const shares = amount ? parseFloat(amount) / price : 0;
   const potentialReturn = shares * 1;
   const impliedProbability = Math.round(price * 100);
 
-  const handleTrade = () => {
-    if (amount && onTrade) {
-      onTrade(selectedSide, parseFloat(amount), action);
+  const handleTrade = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isReady || !clobClient) {
+      toast({
+        title: "CLOB Client Not Ready",
+        description: "Please wait for the client to initialize",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get token ID for the selected side
+    const tokenID = selectedSide === "yes" ? actualYesTokenID : actualNoTokenID;
+    
+    if (!tokenID) {
+      toast({
+        title: "Token ID Missing",
+        description: isFetchingTokens 
+          ? "Fetching token information..." 
+          : "Token ID is required for this market. Please check market configuration or try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPlacingOrder(true);
+
+    try {
+      // Fetch market info if not provided
+      let marketInfo = { tickSize, negRisk };
+      if (marketId) {
+        const info = await getMarketInfo(marketId);
+        if (info) {
+          marketInfo = { tickSize: info.tickSize, negRisk: info.negRisk };
+        }
+      }
+
+      // Place the order
+      const order = await placeOrder(clobClient, {
+        tokenID,
+        price: price, // Price in decimal (e.g., 0.65 for 65¢)
+        side: selectedSide,
+        size: shares, // Number of shares
+        tickSize: marketInfo.tickSize,
+        negRisk: marketInfo.negRisk,
+      });
+
+      toast({
+        title: "Order Placed Successfully",
+        description: `Your ${action} order for ${selectedSide.toUpperCase()} has been placed.`,
+      });
+
+      // Call the onTrade callback if provided
+      if (onTrade) {
+        onTrade(selectedSide, parseFloat(amount), action);
+      }
+
+      // Reset form
+      setAmount("");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to place order";
+      toast({
+        title: "Order Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -206,14 +321,44 @@ function TradingForm({
           variant={selectedSide === "yes" ? "yes" : "no"}
           className="w-full h-12"
           onClick={onSubmit}
-          disabled={!amount || parseFloat(amount) <= 0}
+          disabled={!amount || parseFloat(amount) <= 0 || isPlacingOrder || !isReady}
         >
-          {action === "buy" ? "Buy" : "Sell"} {selectedSide.toUpperCase()}
-          <ArrowRight className="h-4 w-4 ml-2" />
+          {isPlacingOrder ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Placing Order...
+            </>
+          ) : (
+            <>
+              {action === "buy" ? "Buy" : "Sell"} {selectedSide.toUpperCase()}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       ) : (
         <div className="flex justify-center">
           <ConnectButton />
+        </div>
+      )}
+      
+      {/* CLOB Client Status */}
+      {isConnected && (
+        <div className="text-xs text-muted-foreground text-center space-y-1">
+          {isInitializing && <div>Initializing CLOB client...</div>}
+          {error && (
+            <div>
+              <span className="text-destructive">{error}</span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 ml-1 text-xs"
+                onClick={reinitialize}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+          {isReady && !error && <div className="text-green-500">Ready to trade</div>}
         </div>
       )}
     </div>
