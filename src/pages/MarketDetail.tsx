@@ -125,7 +125,15 @@ export default function MarketDetail() {
           {/* Right Column - Trading Panel */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              <TradingPanel yesPrice={market.yesPrice} noPrice={market.noPrice} />
+              <TradingPanel 
+                yesPrice={market.yesPrice} 
+                noPrice={market.noPrice}
+                marketId={market.id}
+                yesTokenID={market.yesTokenID}
+                noTokenID={market.noTokenID}
+                tickSize={market.tickSize}
+                negRisk={market.negRisk}
+              />
 
               {/* Disclaimer */}
               <div className="mt-4 p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
