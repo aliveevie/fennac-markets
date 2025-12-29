@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Wallet, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { WalletButton } from "@/components/wallet/WalletButton";
 import fennacLogo from "@/assets/fennac-logo.png";
 
 const navLinks = [
@@ -49,10 +50,7 @@ export function Navbar() {
 
         {/* Wallet Connect */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="wallet" size="default">
-            <Wallet className="h-4 w-4" />
-            Connect Wallet
-          </Button>
+          <WalletButton />
         </div>
 
         {/* Mobile Menu Button */}
@@ -88,10 +86,9 @@ export function Navbar() {
                 </Button>
               </Link>
             ))}
-            <Button variant="wallet" className="w-full mt-4">
-              <Wallet className="h-4 w-4" />
-              Connect Wallet
-            </Button>
+            <div className="pt-2">
+              <WalletButton />
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Info, ArrowRight, Wallet } from "lucide-react";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 interface TradingPanelProps {
   yesPrice: number;
@@ -11,13 +13,14 @@ interface TradingPanelProps {
 }
 
 export function TradingPanel({ yesPrice, noPrice, onTrade }: TradingPanelProps) {
+  const { isConnected } = useAccount();
   const [selectedSide, setSelectedSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [action, setAction] = useState<"buy" | "sell">("buy");
 
   const price = selectedSide === "yes" ? yesPrice : noPrice;
   const shares = amount ? parseFloat(amount) / price : 0;
-  const potentialReturn = shares * 1; // $1 per share if correct
+  const potentialReturn = shares * 1;
   const impliedProbability = Math.round(price * 100);
 
   const handleTrade = () => {
@@ -28,12 +31,10 @@ export function TradingPanel({ yesPrice, noPrice, onTrade }: TradingPanelProps) 
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Header */}
       <div className="p-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Trade</h3>
       </div>
 
-      {/* Action Tabs */}
       <Tabs value={action} onValueChange={(v) => setAction(v as "buy" | "sell")} className="w-full">
         <TabsList className="w-full rounded-none border-b border-border bg-transparent h-11">
           <TabsTrigger
@@ -63,6 +64,7 @@ export function TradingPanel({ yesPrice, noPrice, onTrade }: TradingPanelProps) 
             impliedProbability={impliedProbability}
             action="buy"
             onSubmit={handleTrade}
+            isConnected={isConnected}
           />
         </TabsContent>
 
@@ -79,6 +81,7 @@ export function TradingPanel({ yesPrice, noPrice, onTrade }: TradingPanelProps) 
             impliedProbability={impliedProbability}
             action="sell"
             onSubmit={handleTrade}
+            isConnected={isConnected}
           />
         </TabsContent>
       </Tabs>
@@ -98,6 +101,7 @@ interface TradingFormProps {
   impliedProbability: number;
   action: "buy" | "sell";
   onSubmit: () => void;
+  isConnected: boolean;
 }
 
 function TradingForm({
@@ -112,6 +116,7 @@ function TradingForm({
   impliedProbability,
   action,
   onSubmit,
+  isConnected,
 }: TradingFormProps) {
   return (
     <div className="p-4 space-y-4">
@@ -196,16 +201,21 @@ function TradingForm({
       </div>
 
       {/* Submit Button */}
-      <Button
-        variant="wallet"
-        className="w-full h-12"
-        onClick={onSubmit}
-        disabled={!amount || parseFloat(amount) <= 0}
-      >
-        <Wallet className="h-4 w-4" />
-        Connect Wallet to Trade
-        <ArrowRight className="h-4 w-4" />
-      </Button>
+      {isConnected ? (
+        <Button
+          variant={selectedSide === "yes" ? "yes" : "no"}
+          className="w-full h-12"
+          onClick={onSubmit}
+          disabled={!amount || parseFloat(amount) <= 0}
+        >
+          {action === "buy" ? "Buy" : "Sell"} {selectedSide.toUpperCase()}
+          <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+      ) : (
+        <div className="flex justify-center">
+          <ConnectButton />
+        </div>
+      )}
     </div>
   );
 }
