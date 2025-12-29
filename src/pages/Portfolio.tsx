@@ -1,14 +1,16 @@
 import { Wallet, TrendingUp, TrendingDown, Clock, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PositionCard, PositionCardSkeleton } from "@/components/portfolio/PositionCard";
+import { PositionCard } from "@/components/portfolio/PositionCard";
 import { mockPositions, resolvedPositions } from "@/data/mockData";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Portfolio() {
+  const { isConnected, address } = useAccount();
+
   const totalBalance = 1250.45;
   const totalPnl = 186.32;
   const pnlPercent = 17.5;
-  const isConnected = false;
 
   if (!isConnected) {
     return (
@@ -22,10 +24,10 @@ export default function Portfolio() {
             <p className="text-muted-foreground mb-6">
               Connect your wallet to view your portfolio, track positions, and start trading on prediction markets.
             </p>
-            <Button variant="wallet" size="lg" className="w-full">
-              <Wallet className="h-5 w-5" />
-              Connect Wallet
-            </Button>
+            
+            <div className="flex justify-center">
+              <ConnectButton />
+            </div>
 
             <div className="mt-8 pt-6 border-t border-border text-left">
               <h3 className="text-sm font-semibold text-foreground mb-3">Supported Wallets</h3>
@@ -36,11 +38,11 @@ export default function Portfolio() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  Magic (Email) for passwordless login
+                  Rainbow, Trust Wallet, Ledger
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  Hardware wallets via WalletConnect
+                  200+ wallets via WalletConnect
                 </li>
               </ul>
             </div>
@@ -62,7 +64,12 @@ export default function Portfolio() {
       {/* Portfolio Header */}
       <section className="border-b border-border">
         <div className="container py-8">
-          <h1 className="text-2xl font-bold text-foreground mb-6">Portfolio</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-foreground">Portfolio</h1>
+            <span className="text-sm text-muted-foreground font-mono">
+              {address?.slice(0, 6)}...{address?.slice(-4)}
+            </span>
+          </div>
 
           {/* Balance Cards */}
           <div className="grid gap-4 md:grid-cols-3">
