@@ -9,6 +9,10 @@ export const featuredMarkets = [
     liquidity: "$890K",
     endDate: "Nov 5, 2024",
     featured: true,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
   {
     id: "fed-rate-cut",
@@ -20,6 +24,10 @@ export const featuredMarkets = [
     liquidity: "$620K",
     endDate: "Mar 31, 2025",
     featured: true,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
   {
     id: "ukraine-ceasefire",
@@ -31,6 +39,10 @@ export const featuredMarkets = [
     liquidity: "$340K",
     endDate: "Jun 30, 2025",
     featured: false,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
   {
     id: "eu-ai-act",
@@ -42,6 +54,10 @@ export const featuredMarkets = [
     liquidity: "$180K",
     endDate: "Jan 31, 2026",
     featured: false,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
   {
     id: "china-taiwan-sanctions",
@@ -53,6 +69,10 @@ export const featuredMarkets = [
     liquidity: "$290K",
     endDate: "Dec 31, 2025",
     featured: false,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
   {
     id: "uk-rejoins-eu",
@@ -64,6 +84,10 @@ export const featuredMarkets = [
     liquidity: "$140K",
     endDate: "Dec 31, 2027",
     featured: false,
+    yesTokenID: "",
+    noTokenID: "",
+    tickSize: "0.001",
+    negRisk: false,
   },
 ];
 
