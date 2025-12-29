@@ -9,6 +9,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { useBalance } from "wagmi";
+import { formatUnits } from "viem";
+
+// Component to display balance using wagmi hook
+function BalanceDisplay({ address, chainId, enabled }: { address?: string; chainId?: number; enabled?: boolean }) {
+  const { data: balance } = useBalance({
+    address: address as `0x${string}` | undefined,
+    chainId,
+    enabled: enabled && !!address,
+  });
+
+  if (!balance) return null;
+
+  const formattedBalance = parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(4);
+  return (
+    <span className="text-xs text-muted-foreground font-mono">
+      {formattedBalance} {balance.symbol}
+    </span>
+  );
+}
 
 export function WalletButton() {
   return (
@@ -68,9 +88,11 @@ export function WalletButton() {
                         <span className="font-mono text-sm">
                           {account.displayName}
                         </span>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {account.displayBalance ?? ""}
-                        </span>
+                        <BalanceDisplay 
+                          address={account.address} 
+                          chainId={chain.id} 
+                          enabled={connected} 
+                        />
                       </div>
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </Button>
